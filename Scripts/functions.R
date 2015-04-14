@@ -1,24 +1,30 @@
 
 #so you need to convert all your x and y based on the grain size.Anyways somehow we end up with a matrix of site by species matrix. 
-a <- ifelse(runif(12,0,1)<.5, 1, 0)
-b <- ifelse(runif(12,0,1)<.4, 1, 0)
-c <- ifelse(runif(12,0,1)<.6, 1, 0)
-d <- ifelse(runif(12,0,1)<.5, 1, 0)
-x <- rep.int(c(1,2,3,4),3)
-y <- c(1,1,1,1,2,2,2,2,3,3,3,3)
-mat= cbind(a,b,c,d,x,y)
+data = read.csv('./data/cross_comms.csv')
+grainSize = 156.25
+species.RichnessMatrix = as.matrix(data[which(data$grain==grainSize),-(1:3)])
 
-species.RichnessMatrix = matrix() 
-xyCoords = cbind(mat[,5],mat[,6])
-dist.Mat = dist(xyCoords)
-grain = 1
-sites.ByDist = seperateQuadratsByDistance(dist.Mat, grain)
+xyCoords = data[,2:3]
+dist.Mat = dist(xyCoords)*sqrt(grainSize)
 
-for(i in 1:length(sites.ByDist)){
-    cov.Mat[[i]] = computeCovarianceMatrixOfSpeciesRichness(sites.ByDist[[i]], mat[,-(5:6)])
-}
+H <- ceiling(dist.Mat/sqrt(grainSize))*grainSize
+hmax <- round((max(dist.Mat/2)/grainSize)*grainSize)
+H[H>hmax] <- max(H)
+dist.Classes = unique(H)
+H <- as.matrix(H)
+
+sites.ByDist = list()
+for(i in 1:length(dist.Classes))
+    sites.ByDist[[i]] = which(H == dist.Classes[i], arr.ind = TRUE)
 
 cov.Mat = list()
+for(i in 1:length(dist.Classes)){
+    diff = species.RichnessMatrix[sites.ByDist[[i]][,1],]-species.RichnessMatrix[sites.ByDist[[i]][,2],]
+    cov.Mat[[i]] = matrix(0, nrow = ncol(diff), ncol = ncol(diff))
+    for(j in 1:nrow(diff)){
+        cov.Mat[[i]] = cov.Mat[[i]] + diff[j,]%*%t(diff[j,])
+    }
+}
 
 C = Reduce('+',cov.Mat)
 
@@ -26,49 +32,4 @@ eigen.ForC<-eigen(C)
 eigen.values<-eigen.ForC$values
 eigen.vectors<-eigen.ForC$vectors
 
-weighted.Eigenvalue = eigenvalueByDistance(C, eigen.vectors[1])
-
-
-innerProdOfSitePair <- function(i, j){
-    site.Diff = i -j
-    cov.matrixForSitePair = t(site.Diff)*site.Diff
-    return(cov.matrixForSitePair)
-}
-
-seperateQuadratsByDistance<-function(mat, grain){
-    H <- ceiling(mat/grain)*grain
-    hmax <- round((max(mat/2)/grain)*grain)
-    #H[H>hmax] <- max(H)
-    #sitesByDist = list()
-    dist.Classes = unique(H)
-    H <- as.matrix(H)
-    sitesByDist = list()
-    for(i in 1:length(dist.Classes))
-        sitesByDist[[i]] = which(H == dist.Classes[i], arr.ind = TRUE)
-    return(sitesByDist)
-}
-
-computeCovarianceMatrixOfSpeciesRichness<- function(List, mat){
-    sum = matrix(0, nrow = ncol(mat), ncol = ncol(mat))
-    for(i in 1:nrow(List)){
-        pair = List[i,]
-        site.Diff = mat[pair[1],]-mat[pair[2],]
-        sum = multiplyVectors(site.Diff, site.Diff)+ sum 
-    }
-    return(sum)
-}
-
-eigenvalueByDistance <- function(cov.Mat, v){
-    weighted.Eigenvalue = t(v)*cov.Mat*v
-    return weighted.Eigenvalue
-}
-
-multiplyVectors<-function(x,y){
-    mat = matrix(0,nrow = length(x), ncol = length(x))
-    for(i in 1:length(x)){
-        for (j in 1:length(y)){
-            mat[i,j] = x[i]*y[j]
-        }
-    }
-    return(mat)
-}
+weighted.Eigenvalue = t(eigen.vectors[1])%*%cov.Mat%*%eigen.vectors[1]
