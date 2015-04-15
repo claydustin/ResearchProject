@@ -1,6 +1,7 @@
 #read in data and select data separated at a specific grain size
 data = read.csv('./data/cross_comms.csv')
 grainSize = 156.25
+data = data[which(data$grain==grainSize),]
 species.RichnessMatrix = as.matrix(data[which(data$grain==grainSize),-(1:3)])
 
 #create the distance matrix between sites
@@ -8,8 +9,8 @@ xyCoords = data[,2:3]
 dist.Mat = dist(xyCoords)*sqrt(grainSize)
 
 #create a list of distance classes 
-H <- ceiling(dist.Mat/sqrt(grainSize))*grainSize
-hmax <- round((max(dist.Mat/2)/grainSize)*grainSize)
+H <- ceiling(dist.Mat/sqrt(grainSize))*sqrt(grainSize)
+hmax <- round((max(dist.Mat/2)/sqrt(grainSize))*sqrt(grainSize))
 H[H>hmax] <- max(H)
 dist.Classes = unique(H)
 H <- as.matrix(H)
@@ -22,6 +23,7 @@ for(i in 1:length(dist.Classes))
 #create a covariance matrix at each distance in H
 cov.Mat = list()
 for(i in 1:length(dist.Classes)){
+    print(i)
     diff = species.RichnessMatrix[sites.ByDist[[i]][,1],]-species.RichnessMatrix[sites.ByDist[[i]][,2],]
     cov.Mat[[i]] = matrix(0, nrow = ncol(diff), ncol = ncol(diff))
     for(j in 1:nrow(diff)){
@@ -37,7 +39,11 @@ eigen.ForC<-eigen(C)
 eigen.values<-eigen.ForC$values
 eigen.vectors<-eigen.ForC$vectors
 
-weighted.Eigenvalue = t(eigen.vectors[1])%*%cov.Mat%*%eigen.vectors[1]
+#partition eigenvalue according to amount explained at distance H
+weighted.Eigenvalues = list()
+for(i in 1:length(cov.Mat)){
+    weighted.Eigenvalue = t(eigen.vectors[,1])%*%cov.Mat[[i]]%*%eigen.vectors[,1]
+}
 
 #create matrices of complimentarity (where the covariance matrix is not defined for between species variances)
 comp.Cov = list()
