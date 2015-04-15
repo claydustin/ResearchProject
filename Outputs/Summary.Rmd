@@ -1,38 +1,40 @@
 ---
-title: "Untitled"
+title: "Multi-Scale Ordination Under Variogram Based Framework"
 output: html_document
 ---
 
 Read in data and select data separated at a specific grain size
-'''{r}
+
+```{r}
+setwd('C:/Users/Documents/Clay Dustin/Spring 2015/Quantitative Methods/tree_vario/Data')
 data = read.csv('./data/cross_comms.csv')
 grainSize = 156.25
 species.RichnessMatrix = as.matrix(data[which(data$grain==grainSize),-(1:3)])
-'''
+```
 
 Create the distance matrix between sites
-'''{r eval=TRUE}
+```{r eval=TRUE}
 xyCoords = data[,2:3]
 dist.Mat = dist(xyCoords)*sqrt(grainSize)
-'''
+```
 
 Create a list of distance classes 
-'''{r}
+```{r}
 H <- ceiling(dist.Mat/sqrt(grainSize))*grainSize
 hmax <- round((max(dist.Mat/2)/grainSize)*grainSize)
 H[H>hmax] <- max(H)
 dist.Classes = unique(H)
 H <- as.matrix(H)
-'''
+```
 Now that we have distinct distance intervals we want to separate the paired sites according to the distance between them.
-'''{r}
+```{r}
 sites.ByDist = list()
 for(i in 1:length(dist.Classes))
     sites.ByDist[[i]] = which(H == dist.Classes[i], arr.ind = TRUE)
-'''
+```
 
 Now that we have a list of unique distance intervals that exist between sites we can generate covariance matrices based on each distance interval.
-'''{r}
+```{r}
 cov.Mat = list()
 for(i in 1:length(dist.Classes)){
     diff = species.RichnessMatrix[sites.ByDist[[i]][,1],]-species.RichnessMatrix[sites.ByDist[[i]][,2],]
@@ -41,23 +43,23 @@ for(i in 1:length(dist.Classes)){
         cov.Mat[[i]] = cov.Mat[[i]] + diff[j,]%*%t(diff[j,])
     }
 }
-'''
+```
 Now we construct the total covariance matrix which is the sum of all the covariance matrices by H.
-'''{r eval=TRUE}
+```{r eval=TRUE}
 C = Reduce('+',cov.Mat)
-'''
+```
 
 Next we perform Principal Component Analysis on the summed matrix which results will allow us to identify the main causes for variance in species richness. 
-'''{r eval=TRUE}
+```{r eval=TRUE}
 eigen.ForC<-eigen(C)
 eigen.values<-eigen.ForC$values
 eigen.vectors<-eigen.ForC$vectors
-'''
+```
 
 Next we extract the proportion of eigenvalue represented at each distance class. This allows us to determine at what H most of the variance reported by the PCA is represented at. 
-'''{r eval =TRUE}
+```{r eval =TRUE}
 weighted.Eigenvalue = t(eigen.vectors[1])%*%cov.Mat%*%eigen.vectors[1]
-'''
+```
 
 #create matrices of complimentarity (where the covariance matrix is not defined for between species variances)
 comp.Cov = list()
