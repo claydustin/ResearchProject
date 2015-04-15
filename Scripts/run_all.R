@@ -23,7 +23,6 @@ for(i in 1:length(dist.Classes))
 #create a covariance matrix at each distance in H
 cov.Mat = list()
 for(i in 1:length(dist.Classes)){
-    print(i)
     diff = species.RichnessMatrix[sites.ByDist[[i]][,1],]-species.RichnessMatrix[sites.ByDist[[i]][,2],]
     cov.Mat[[i]] = matrix(0, nrow = ncol(diff), ncol = ncol(diff))
     for(j in 1:nrow(diff)){
@@ -45,10 +44,23 @@ for(i in 1:length(cov.Mat)){
     weighted.Eigenvalue = t(eigen.vectors[,1])%*%cov.Mat[[i]]%*%eigen.vectors[,1]
 }
 
-#create matrices of complimentarity (where the covariance matrix is not defined for between species variances)
-comp.Cov = list()
-for(i in 1:length(cov.Mat)){
-    comp.Cov[[i]] = diag(diag(cov.Mat[[i]]))
+#Compute the variance of complementarity at each H
+comp.Cov = c()
+SR.Cov = c()
+PCAremoved.Cov = c()
+for(i in 1:length(dist.Classes)){
+    comp.Cov[i] = sum(diag(cov.Mat[[i]]))
+    SR.Cov[i] = sum(cov.Mat[[i]])
+    PCAremoved.Cov[i] = sum(cov.Mat[[i]])-weighted.Eigenvalue[i]
 }
+variances = list(comp.Cov, SR.Cov, PCAremoved.Cov)
+
+#Plot the difference variance measures
+plot(dist.Classes, variances[[1]],pch = 15)
+par(new = T)
+plot(dist.Classes, variances[[2]], pch = 16)
+par(new = T)
+plot(dist.Classes, variances[[3]], pch = 17)
+legend("bottomright", legend = c("Species richness", "Interspecific associations", "Species composition", "Environmental heterogeneity", "without PCA 1", "Single-species aggregation", "global variance without PCA 1"), pch = c(15, 16, 17), bty = 'n')
 
 
