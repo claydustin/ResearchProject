@@ -3,6 +3,8 @@ data = read.csv('./data/oosting_comms.csv')
 grainSize = 256
 data = data[which(data$grain==grainSize),]
 species.RichnessMatrix = as.matrix(data[which(data$grain==grainSize),-(1:3)])
+abundance.bySpecies = apply(species.RichnessMatrix, 2, sum)
+species.RichnessMatrix = species.RichnessMatrix[,which(abundance.bySpecies>5,arr.ind = TRUE)]
 
 #global species variance
 Var = sum(cov(species.RichnessMatrix))
@@ -59,14 +61,17 @@ for(i in 1:length(dist.Classes)){
 }
 variances = list(comp.Cov, SR.Cov, PCAremoved.Cov)
 
-#Plot the difference variance measures
-plot(dist.Classes, variances[[1]],pch = 15) #squares
-par(new = T)
-plot(dist.Classes, variances[[2]], pch = 16) #circles
-par(new = T)
-plot(dist.Classes, variances[[3]], pch = 17)
-par(new = T)
-abline(h = Var)
+#Plot the diffence variance measures
+xrange = range(dist.Classes)
+yrange = range(variances)
+linetype = c(2:5)
+plotchar = c(15:17)
+
+plot(xrange, yrange, type = "n", xlab = "Distance", ylab = "Variance")
+for (i in 1:3){
+    lines(dist.Classes, variances[[i]], type = "b", lwd = 1.5, lty = linetype[i], pch = plotchar[i])
+}
+
 
 legend("bottomright", legend = c("Species richness", "Interspecific associations", "Species composition", "Environmental heterogeneity", "without PCA 1", "Single-species aggregation", "global variance without PCA 1"), pch = c(15, 16, 17), bty = 'n')
 
