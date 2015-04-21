@@ -16,7 +16,7 @@ mso2 <- function(data, xyCoords, plot = TRUE, grainSize){
     H <- round(dist.Mat/sqrt(grainSize))*sqrt(grainSize)
     hmax <- round((max(dist.Mat/2)/sqrt(grainSize))*sqrt(grainSize))
     H[H>hmax] <- max(H)
-    dist.Classes = unique(H[-which(H == max(H), arr.ind = TRUE)])
+    object$dist.Classes = dist.Classes = unique(H[-which(H == max(H), arr.ind = TRUE)])
     H <- as.matrix(H)
     
     #separate site pairs according to distance between them 
@@ -37,8 +37,7 @@ mso2 <- function(data, xyCoords, plot = TRUE, grainSize){
     
     #create the overall covariance matrix used in PCA and find the global variance 
     C = Reduce('+',cov.Mat)
-    global.Var = (1/length(dist.Classes))*sum(C)
-    object$global.Var = global.Var
+    object$global.Var = global.Var = (1/length(dist.Classes))*sum(C)
     
     #perform PCA analysis
     eigen.ForC<-eigen(C)
@@ -50,7 +49,7 @@ mso2 <- function(data, xyCoords, plot = TRUE, grainSize){
     for(i in 1:length(cov.Mat)){
         weighted.Eigenvalues[i] = t(eigen.vectors[,1])%*%cov.Mat[[i]]%*%eigen.vectors[,1]
     }
-    
+    object$eigenvalues = weighted.Eigenvalues
     #Compute the variance of complementarity at each H. I'm getting the 3rd variance estimate as being comp.Cov -weightedEigenvalues "The observed variance of complementarity without axis 1 appeared tooscillate around its global variance, indicating that all larger scale trend had been accounted for by removing PCA axis 1."
     comp.Cov = c()
     SR.Cov = c()
@@ -60,7 +59,8 @@ mso2 <- function(data, xyCoords, plot = TRUE, grainSize){
         SR.Cov[i] = sum(cov.Mat[[i]])
         PCAremoved.Cov[i] = sum(comp.Cov[i])-weighted.Eigenvalue[i]
     }
-    variances = list(comp.Cov, SR.Cov, PCAremoved.Cov)
+    object$variances = variances = list(comp.Cov, SR.Cov, PCAremoved.Cov)
+    
     
     if(plot){
         #Plot the diffence variance measures
@@ -78,4 +78,19 @@ mso2 <- function(data, xyCoords, plot = TRUE, grainSize){
         legend("bottomright", legend = c("Species composition", "Interspecific associations", "Species richness without PCA 1"), pch = c(15, 16, 17), bty = 'n')
     }
     return(object)
+}
+
+
+mso2plot<-function(obj){
+    xrange = range(obj$dist.Classes)
+    yrange = range(obj$variances)
+    plotchar = c(15:17)
+    
+    plot(xrange, yrange, type = "n", xlab = "Distance", ylab = "Variance")
+    for(i in 1:3){
+        lines(obj$dist.Classes, obj$variances[[i]], type = "b", lwd = 1.5, pch = plotchar[i])
+    }
+    abline(h = obj$global.Var, lty = 4)
+    legend("bottomright", legend = c("Species composition", "Interspecific associations", "Species richness without PCA 1"), pch = c(15, 16, 17), bty = 'n')
+    
 }
