@@ -4,11 +4,15 @@ output: html_document
 ---
 
 Read in data and select data separated at a specific grain size
+```{r setup, echo = FALSE}
+library(knitr)
+opts_knit$set(root.dir = '../')
+```
 
 ```{r}
-setwd('C:/Users/Documents/Clay Dustin/Spring 2015/Quantitative Methods/tree_vario/Data')
 data = read.csv('./data/cross_comms.csv')
 grainSize = 156.25
+data = data[which(data$grain==grainSize),]
 species.RichnessMatrix = as.matrix(data[which(data$grain==grainSize),-(1:3)])
 ```
 
@@ -58,11 +62,8 @@ eigen.vectors<-eigen.ForC$vectors
 
 Next we extract the proportion of eigenvalue represented at each distance class. This allows us to determine at what H most of the variance reported by the PCA is represented at. 
 ```{r eval =TRUE}
-weighted.Eigenvalue = t(eigen.vectors[1])%*%cov.Mat%*%eigen.vectors[1]
-```
-
-#create matrices of complimentarity (where the covariance matrix is not defined for between species variances)
-comp.Cov = list()
+weighted.Eigenvalues = list()
 for(i in 1:length(cov.Mat)){
-    comp.Cov[[i]] = diag(diag(cov.Mat[[i]]))
+    weighted.Eigenvalue = t(eigen.vectors[,1])%*%cov.Mat[[i]]%*%eigen.vectors[,1]
 }
+```
