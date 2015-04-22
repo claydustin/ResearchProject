@@ -1,11 +1,13 @@
 
-mso2 <- function(data, xyCoords, plot = TRUE, grainSize){
+mso2 <- function(data, xyCoords, plot = TRUE, grainSize = 1){
     #read in data and select data separated at a specific grain size
+    print(grainSize)
     object = list()
     object$data = data
     object$xy = xyCoords
     
     data = data[which(data$grain==grainSize),]
+    Species.RichnessMatrix = data[,-c(1:3)]
     abundance.bySpecies = apply(data, 2, sum)
     species.RichnessMatrix = replace(data, list = which(data > 0,arr.ind = TRUE), 1)
     
@@ -27,10 +29,12 @@ mso2 <- function(data, xyCoords, plot = TRUE, grainSize){
     #create a covariance matrix at each distance in H
     cov.Mat = list()
     for(i in 1:length(dist.Classes)){
+        print(length(species.RichnessMatrix[sites.ByDist[[i]][,1],]))
+        print(length(species.RichnessMatrix[sites.ByDist[[i]][,2],]))
         diff = species.RichnessMatrix[sites.ByDist[[i]][,1],]-species.RichnessMatrix[sites.ByDist[[i]][,2],]
         cov.Mat[[i]] = matrix(0, nrow = ncol(diff), ncol = ncol(diff))
         for(j in 1:nrow(diff)){
-            cov.Mat[[i]] = cov.Mat[[i]] + as.matrix(diff[j,])%*%as.matrix(t(diff[j,]))
+            cov.Mat[[i]] = cov.Mat[[i]] + as.matrix(t(diff[j,])%*%as.matrix(diff[j,])
         }
         cov.Mat[[i]] = (1/(2*nrow(sites.ByDist[[i]])))*cov.Mat[[i]]
     }
