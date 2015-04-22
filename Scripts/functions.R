@@ -29,12 +29,10 @@ mso2 <- function(data, xyCoords, plot = TRUE, grainSize = 1){
     #create a covariance matrix at each distance in H
     cov.Mat = list()
     for(i in 1:length(dist.Classes)){
-        print(length(species.RichnessMatrix[sites.ByDist[[i]][,1],]))
-        print(length(species.RichnessMatrix[sites.ByDist[[i]][,2],]))
         diff = species.RichnessMatrix[sites.ByDist[[i]][,1],]-species.RichnessMatrix[sites.ByDist[[i]][,2],]
         cov.Mat[[i]] = matrix(0, nrow = ncol(diff), ncol = ncol(diff))
         for(j in 1:nrow(diff)){
-            cov.Mat[[i]] = cov.Mat[[i]] + as.matrix(t(diff[j,])%*%as.matrix(diff[j,])
+            cov.Mat[[i]] = cov.Mat[[i]] + as.matrix(t(diff[j,]))%*%as.matrix(diff[j,])
         }
         cov.Mat[[i]] = (1/(2*nrow(sites.ByDist[[i]])))*cov.Mat[[i]]
     }
