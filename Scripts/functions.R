@@ -1,7 +1,6 @@
 
 mso2 <- function(data, xyCoords, plot = TRUE, grainSize = 1){
     #read in data and select data separated at a specific grain size
-    print(grainSize)
     object = list()
     object$data = data
     object$xy = xyCoords
