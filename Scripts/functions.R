@@ -1,14 +1,13 @@
 
-mso2 <- function(data, xyCoords, plot = TRUE, grainSize = 1){
+mso2 <- function(data, plot = TRUE, grainSize = 1){
     #read in data and select data separated at a specific grain size
     object = list()
     object$data = data
-    object$xy = xyCoords
-    
     data = data[which(data$grain==grainSize),]
-    Species.RichnessMatrix = data[,-c(1:3)]
+    object$xy = xyCoords = data[,c(2,3)]
+    species.RichnessMatrix = data[,-c(1:3)]
     abundance.bySpecies = apply(data, 2, sum)
-    species.RichnessMatrix = replace(data, list = which(data > 0,arr.ind = TRUE), 1)
+    species.RichnessMatrix = replace(species.RichnessMatrix, list = which(species.RichnessMatrix > 0,arr.ind = TRUE), 1)
     
     #create the distance matrix between sites
     dist.Mat = dist(xyCoords)*sqrt(grainSize)
@@ -35,8 +34,12 @@ mso2 <- function(data, xyCoords, plot = TRUE, grainSize = 1){
         }
         cov.Mat[[i]] = (1/(2*nrow(sites.ByDist[[i]])))*cov.Mat[[i]]
     }
+    object$cov.Mat = cov.Mat
     
     #create the overall covariance matrix used in PCA and find the global variance 
+    for(i in 1:length(cov.Mat)){
+        cov.Mat[[i]] = cov.Mat[[i]]*(length(sites.ByDist[[i]])/length(as.vector(dist.Mat)))
+    }
     C = Reduce('+',cov.Mat)
     object$global.Var = global.Var = (1/length(dist.Classes))*sum(C)
     
@@ -58,7 +61,7 @@ mso2 <- function(data, xyCoords, plot = TRUE, grainSize = 1){
     for(i in 1:length(dist.Classes)){
         comp.Cov[i] = sum(diag(cov.Mat[[i]]))
         SR.Cov[i] = sum(cov.Mat[[i]])
-        PCAremoved.Cov[i] = sum(comp.Cov[i])-weighted.Eigenvalue[i]
+        PCAremoved.Cov[i] = SR.Cov[i]-weighted.Eigenvalues[i]
     }
     object$variances = variances = list(comp.Cov, SR.Cov, PCAremoved.Cov)
     
